@@ -94,44 +94,100 @@ class BBP_Mark_As_Read {
 	}
 
 	// checks if a topic is read for the specified user
-	public function is_read( $user_id, $topic_id ) {
+	public function is_read( $user_id = 0, $topic_id = 0 ) {
 
-		$read_ids = $this->get_read_ids( $user_id );
-		$return = false;
-		if( empty( $read_ids ) )
-			$return = false;
-		if( in_array( $topic_id, $read_ids ) )
-			$return = true;
+		$user_id = bbp_get_user_id( $user_id, true, true );
+		if ( empty( $user_id ) )
+			return false;
 
-		return apply_filters( 'bbp_is_read', $return, $user_id, $topic_id );
+		$retval 	= false;
+		$read_ids 	= $this->get_read_ids( $user_id );
+
+		if ( !empty( $read_ids ) ) {
+
+			// Checking a specific topic id
+			if ( !empty( $topic_id ) ) {
+				$topic     = bbp_get_topic( $topic_id );
+				$topic_id = !empty( $topic ) ? $topic->ID : 0;
+
+			// Using the global topic id
+			} elseif ( bbp_get_topic_id() ) {
+				$topic_id = bbp_get_topic_id();
+
+			// Use the current post id
+			} elseif ( !bbp_get_topic_id() ) {
+				$topic_id = get_the_ID();
+			}
+
+			// Is topic_id in the user's read list
+			if ( !empty( $topic_id ) ) {
+				$retval = in_array( $topic_id, $read_ids );
+			}
+		}
+
+		return (bool) apply_filters( 'bbp_mar_is_read', (bool) $retval, $user_id, $topic_id, $read_ids );
 	}
 
 	// marks a topic as read for the specified user
-	public function mark_as_read( $user_id, $topic_id ) {
-		$read_ids = $this->get_read_ids( $user_id );
-		if( is_array( $topic_id ) )
-			$read_ids = array_merge( $topic_id, $read_ids );
-		else
+	public function mark_as_read( $user_id = 0, $topic_id = 0 ) {
+
+		if ( empty( $user_id ) || empty( $topic_id ) )
+			return false;
+
+		$read_ids = (array) $this->get_read_ids( $user_id );
+
+		$topic = bbp_get_topic( $topic_id );
+		if ( empty( $topic ) )
+			return false;
+
+		if ( !in_array( $topic_id, $read_ids ) ) {
 			$read_ids[] = $topic_id;
-		
-		return update_user_meta( $user_id, 'bbp_read_ids', $read_ids );
+			$read_ids   = array_filter( $read_ids );
+			$read_ids   = (string) implode( ',', $read_ids );
+			update_user_meta( $user_id, '_bbp_mar_read_ids', $read_ids );
+		}
+
+		do_action( 'bbp_mar_marked_as_read', $user_id, $topic_id );
+
+		return true;
 	}
 
 	// marks a topic as unread for the specified user
-	public function mark_as_unread( $user_id, $topic_id ) {
-		$read_ids = $this->get_read_ids( $user_id );
-		$found = array_search( $topic_id, $read_ids );
-		if( $found !== false )
-			unset($read_ids[$found]);
-		return update_user_meta( $user_id, 'bbp_read_ids',  $read_ids );
+	public function mark_as_unread( $user_id = 0, $topic_id = 0 ) {
+		
+		if ( empty( $user_id ) || empty( $topic_id ) )
+			return false;
+
+		$read_ids = (array) $this->get_read_ids( $user_id );
+
+		if ( empty( $read_ids ) )
+			return false;
+
+		$pos = array_search( $topic_id, $read_ids );
+		if ( is_numeric( $pos ) ) {
+			array_splice( $read_ids, $pos, 1 );
+			$read_ids = array_filter( $read_ids );
+
+			if ( !empty( $read_ids ) ) {
+				$read_ids = implode( ',', $read_ids );
+				update_user_meta( $user_id, '_bbp_mar_read_ids', $read_ids );
+			} else {
+				delete_user_meta( $user_id, '_bbp_mar_read_ids' );
+			}
+		}
+
+		do_action( 'bbp_mar_marked_as_unread', $user_id, $topic_id );
+
+		return true;
+
 	}
 
 	// retrieves all read topic IDs for the specified user
-	public function get_read_ids( $user_id ) {
-		$read_ids = get_user_meta( $user_id, 'bbp_read_ids', true );
-		if( ! $read_ids || !is_array( $read_ids ) )
-			$read_ids = array(); // empty array
-		return $read_ids;
+	public function get_read_ids( $user_id = 0 ) {
+		$read_ids = (string) get_user_meta( $user_id, '_bbp_mar_read_ids', true );
+		$read_ids = (array) explode( ',', $read_ids );
+		$read_ids = array_filter( $read_ids );
+		return apply_filters( 'bbp_mar_read_ids', (array)$read_ids );
 	}
 
 	// processes the mark as read action
@@ -209,8 +265,6 @@ class BBP_Mark_As_Read {
 			$this->mark_as_read( $user_ID, $topic_ids );
 		}
 
-		wp_redirect( $_SERVER['referer'] ); exit;
-
 	}
 
 	// processes the mark as read action via ajax
@@ -240,6 +294,7 @@ class BBP_Mark_As_Read {
 		$read_ids = $this->get_read_ids( $user_id );
 		if ( !empty( $read_ids ) ) {
 			$query = bbp_has_topics( array( 'post__not_in' => $read_ids ) );
+
 			return apply_filters( 'bbp_get_user_unread', $query, $user_id );
 		}
 
