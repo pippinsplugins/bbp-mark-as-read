@@ -40,6 +40,9 @@ class BBP_Mark_As_Read {
 		// load the JS for auto-marking as read
 		add_action( 'wp_enqueue_scripts', array( $this, 'load_scripts' ) );
 
+		// add a class name indicating the read status
+		add_filter( 'post_class', array( $this, 'topic_post_class' ) );
+
 	} // end constructor
 
 
@@ -247,6 +250,19 @@ class BBP_Mark_As_Read {
 				'time' 		=> apply_filters( 'bbp_mar_auto_mark_time', 10 )
 			) 
 		);
+	}
+
+	public function topic_post_class( $classes ) {
+		global $post, $user_ID;
+		if( 'topic' != get_post_type( $post ) )
+			return $classes;
+
+		if( $this->is_read( $user_ID, $post->ID ) )
+			$classes[] = 'bbp-topic-read';
+		else
+			$classes[] = 'bbp-topic-unread';
+
+		return $classes;
 	}
   
 } // end class
