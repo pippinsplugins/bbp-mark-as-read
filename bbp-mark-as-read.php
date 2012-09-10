@@ -20,19 +20,24 @@ class BBP_Mark_As_Read {
 	 */
 	function __construct() {
 
+		// load the plugin translation files
 		load_plugin_textdomain( 'bbp-mar', false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
 
+		// add the Mark as Read / Unread links
 		add_filter( 'bbp_get_user_subscribe_link', array( $this, 'add_links_to_topics' ), 999, 4 );
 
 		// process marked as read requests
 		add_action( 'init', array( $this, 'process_marked_as_read' ) );
 
+		// process marked as unread requests
+		add_action( 'init', array( $this, 'process_marked_as_unread' ) );
+
+		// process "mark all as read"
+		add_action( 'init', array( $this, 'process_mark_all_as_read' ) );
+
 		// process automatic mark as read requests via ajax
 		add_action( 'wp_ajax_bbp_mark_as_read', array( $this, 'process_ajax_marked_as_read' ) );
 		add_action( 'wp_ajax_nopriv_bbp_mark_as_read', array( $this, 'process_ajax_marked_as_read' ) );
-
-		// process marked as unread requests
-		add_action( 'init', array( $this, 'process_marked_as_unread' ) );
 
 		// add the unread topics section to the bbPress profile page
 		add_action( 'bbp_template_after_user_subscriptions', array( $this, 'show_unread_topics' ) );
@@ -88,6 +93,7 @@ class BBP_Mark_As_Read {
 		return $html . $link;
 	}
 
+	// checks if a topic is read for the specified user
 	public function is_read( $user_id, $topic_id ) {
 
 		$read_ids = $this->get_read_ids( $user_id );
@@ -100,12 +106,18 @@ class BBP_Mark_As_Read {
 		return apply_filters( 'bbp_is_read', $return, $user_id, $topic_id );
 	}
 
+	// marks a topic as read for the specified user
 	public function mark_as_read( $user_id, $topic_id ) {
 		$read_ids = $this->get_read_ids( $user_id );
-		$read_ids[] = $topic_id;
+		if( is_array( $topic_id ) )
+			$read_ids = array_merge( $topic_id, $read_ids );
+		else
+			$read_ids[] = $topic_id;
+		
 		return update_user_meta( $user_id, 'bbp_read_ids', $read_ids );
 	}
 
+	// marks a topic as unread for the specified user
 	public function mark_as_unread( $user_id, $topic_id ) {
 		$read_ids = $this->get_read_ids( $user_id );
 		$found = array_search( $topic_id, $read_ids );
@@ -114,6 +126,7 @@ class BBP_Mark_As_Read {
 		return update_user_meta( $user_id, 'bbp_read_ids',  $read_ids );
 	}
 
+	// retrieves all read topic IDs for the specified user
 	public function get_read_ids( $user_id ) {
 		$read_ids = get_user_meta( $user_id, 'bbp_read_ids', true );
 		if( ! $read_ids || !is_array( $read_ids ) )
@@ -121,6 +134,7 @@ class BBP_Mark_As_Read {
 		return $read_ids;
 	}
 
+	// processes the mark as read action
 	public function process_marked_as_read() {
 		if( !isset( $_GET['action'] ) || $_GET['action'] != 'bbp_mark_as_read' )
 			return;
@@ -145,6 +159,7 @@ class BBP_Mark_As_Read {
 
 	}
 
+	// processes the mark as unread action
 	public function process_marked_as_unread() {
 		if( !isset( $_GET['action'] ) || $_GET['action'] != 'bbp_mark_as_unread' )
 			return;
@@ -169,6 +184,36 @@ class BBP_Mark_As_Read {
 
 	}
 
+	// processes the "mark all as read" action
+	public function process_mark_all_as_read() {
+		if( !isset( $_GET['action'] ) || $_GET['action'] != 'bbp_mark_all_as_read' )
+			return;
+
+		if( ! wp_verify_nonce( $_GET['_wpnonce'], 'mark_all_read' ) )
+			return;
+
+		global $user_ID;
+
+		if ( empty( $user_ID ) )
+			return false;
+
+		$args = array(
+			'post_type' => 'topic', // only the topic post type
+			'posts_per_page' => -1, // get all topcs
+			'post__not_in' => $this->get_read_ids( $user_ID ) // exclude already marked as read topics
+		);
+
+		$topics = get_posts( apply_filters( 'bbp_mar_all_topics_query', $args, $user_ID ) );
+		if( $topics ) {
+			$topic_ids = wp_list_pluck( $topics, 'ID' );
+			$this->mark_as_read( $user_ID, $topic_ids );
+		}
+
+		wp_redirect( $_SERVER['referer'] ); exit;
+
+	}
+
+	// processes the mark as read action via ajax
 	public function process_ajax_marked_as_read() {
 		global $user_ID;
 
@@ -183,6 +228,7 @@ class BBP_Mark_As_Read {
 		die();
 	}
 
+	// get all unread topic IDs for the specified user
 	public function bbp_get_user_unread( $user_id = 0 ) {
 
 		// Default to the displayed user
@@ -201,6 +247,7 @@ class BBP_Mark_As_Read {
 
 	}
 
+	// adds a section showing unread topics to the user's profile
 	public function show_unread_topics() {
 
 		if ( bbp_is_user_home() || current_user_can( 'edit_users' ) ) : ?>
@@ -219,6 +266,9 @@ class BBP_Mark_As_Read {
 
 						<?php bbp_get_template_part( 'pagination', 'topics' ); ?>
 
+						<?php $url = esc_url( wp_nonce_url( add_query_arg( 'action', 'bbp_mark_all_as_read', bbp_get_user_profile_url() ), 'mark_all_read' ) ); ?>
+						<p class="bbp-mark-all-read"><strong><a href="<?php echo $url; ?>"><?php _e('Mark all as topics read', 'bbp-mar'); ?></a></strong></p>
+
 					<?php else : ?>
 
 						<p><?php bbp_is_user_home() ? _e( 'You have read every posted topic.', 'bbp-mar' ) : _e( 'This user has no unread topics.', 'bbp-mar' ); ?></p>
@@ -233,13 +283,16 @@ class BBP_Mark_As_Read {
 		<?php endif;
 	}
 
+	// enqueues the ajax script
 	public function load_scripts() {
 
-		global $post;
+		global $post, $user_ID;
 
 		if( !is_object( $post ) )
 			return;
 		if( 'topic' != get_post_type( $post ) )
+			return;
+		if( $this->is_read( $user_ID, $post->ID ) )
 			return;
 
 		wp_enqueue_script( 'bbp-mark-as-read', plugin_dir_url( __FILE__ ) . 'mark-as-read-auto.js', array( 'jquery' ), '0.1' );
@@ -252,6 +305,7 @@ class BBP_Mark_As_Read {
 		);
 	}
 
+	// adds classes to post_class for read/unread statuses
 	public function topic_post_class( $classes ) {
 		global $post, $user_ID;
 		if( 'topic' != get_post_type( $post ) )
