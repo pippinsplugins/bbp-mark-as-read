@@ -27,10 +27,18 @@ class BBP_Mark_As_Read {
 		// process marked as read requests
 		add_action( 'init', array( $this, 'process_marked_as_read' ) );
 
+		// process automatic mark as read requests via ajax
+		add_action( 'wp_ajax_bbp_mark_as_read', array( $this, 'process_ajax_marked_as_read' ) );
+		add_action( 'wp_ajax_nopriv_bbp_mark_as_read', array( $this, 'process_ajax_marked_as_read' ) );
+
 		// process marked as unread requests
 		add_action( 'init', array( $this, 'process_marked_as_unread' ) );
 
+		// add the unread topics section to the bbPress profile page
 		add_action( 'bbp_template_after_user_subscriptions', array( $this, 'show_unread_topics' ) );
+
+		// load the JS for auto-marking as read
+		add_action( 'wp_enqueue_scripts', array( $this, 'load_scripts' ) );
 
 	} // end constructor
 
@@ -158,6 +166,20 @@ class BBP_Mark_As_Read {
 
 	}
 
+	public function process_ajax_marked_as_read() {
+		global $user_ID;
+
+		if ( empty( $user_ID ) || ! isset( $_POST['topic_id']) )
+			return false;
+
+		// make sure the current user has permission to edit the user
+		if ( !current_user_can( 'edit_user', (int) $user_ID ) )
+			return false;
+
+		$this->mark_as_read( $user_ID, $_POST['topic_id'] );
+		die();
+	}
+
 	public function bbp_get_user_unread( $user_id = 0 ) {
 
 		// Default to the displayed user
@@ -208,6 +230,24 @@ class BBP_Mark_As_Read {
 		<?php endif;
 	}
 
+	public function load_scripts() {
+
+		global $post;
+
+		if( !is_object( $post ) )
+			return;
+		if( 'topic' != get_post_type( $post ) )
+			return;
+
+		wp_enqueue_script( 'bbp-mark-as-read', plugin_dir_url( __FILE__ ) . 'mark-as-read-auto.js', array( 'jquery' ), '0.1' );
+		wp_localize_script( 'bbp-mark-as-read', 'mark_as_read_auto_js', 
+			array( 
+				'ajaxurl' 	=> admin_url( 'admin-ajax.php' ),
+				'topic_id' 	=> bbp_get_topic_id(),
+				'time' 		=> apply_filters( 'bbp_mar_auto_mark_time', 10 )
+			) 
+		);
+	}
   
 } // end class
 
