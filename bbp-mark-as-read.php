@@ -30,6 +30,8 @@ class BBP_Mark_As_Read {
 		// process marked as unread requests
 		add_action( 'init', array( $this, 'process_marked_as_unread' ) );
 
+		add_action( 'bbp_template_after_user_subscriptions', array( $this, 'show_unread_topics' ) );
+
 	} // end constructor
 
 
@@ -84,7 +86,6 @@ class BBP_Mark_As_Read {
 		if( in_array( $topic_id, $read_ids ) )
 			$return = true;
 
-		//delete_user_meta( $user_id, 'bbp_read_ids' );
 		return apply_filters( 'bbp_is_read', $return, $user_id, $topic_id );
 	}
 
@@ -155,7 +156,56 @@ class BBP_Mark_As_Read {
 		
 		$this->mark_as_unread( $user_ID, $topic_id );
 
+	}
 
+	public function bbp_get_user_unread( $user_id = 0 ) {
+
+		// Default to the displayed user
+		$user_id = bbp_get_user_id( $user_id );
+		if ( empty( $user_id ) )
+			return false;
+
+		// If user has unread topics, load them
+		$read_ids = $this->get_read_ids( $user_id );
+		if ( !empty( $read_ids ) ) {
+			$query = bbp_has_topics( array( 'post__not_in' => $read_ids ) );
+			return apply_filters( 'bbp_get_user_unread', $query, $user_id );
+		}
+
+		return false;
+
+	}
+
+	public function show_unread_topics() {
+
+		if ( bbp_is_user_home() || current_user_can( 'edit_users' ) ) : ?>
+
+			<?php bbp_set_query_name( 'bbp_user_profile_unread_topics' ); ?>
+
+			<div id="bbp-author-unread-topics" class="bbp-author-unread-topics">
+				<h2 class="entry-title"><?php _e( 'Unread Forum Topics', 'bbp-mar' ); ?></h2>
+				<div class="bbp-user-section">
+
+					<?php if ( $this->bbp_get_user_unread() ) : ?>
+
+						<?php bbp_get_template_part( 'pagination', 'topics' ); ?>
+
+						<?php bbp_get_template_part( 'loop',       'topics' ); ?>
+
+						<?php bbp_get_template_part( 'pagination', 'topics' ); ?>
+
+					<?php else : ?>
+
+						<p><?php bbp_is_user_home() ? _e( 'You have read every posted topic.', 'bbp-mar' ) : _e( 'This user has no unread topics.', 'bbp-mar' ); ?></p>
+
+					<?php endif; ?>
+
+				</div>
+			</div><!-- #bbp-author-unread-topics -->
+
+			<?php bbp_reset_query_name(); ?>
+
+		<?php endif;
 	}
 
   
