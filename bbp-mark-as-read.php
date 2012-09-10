@@ -79,6 +79,8 @@ class BBP_Mark_As_Read {
 			$permalink = bbp_get_topic_permalink( $topic_id );
 		} elseif ( bbp_is_query_name( 'bbp_single_topic' ) ) {
 			$permalink = get_permalink();
+		} else {
+			$permalink = null;
 		}
 
 		$url = esc_url( wp_nonce_url( add_query_arg( $query_args, $permalink ), 'toggle-read_state_' . $topic_id ) );
@@ -289,7 +291,6 @@ class BBP_Mark_As_Read {
 		$user_id = bbp_get_user_id( $user_id );
 		if ( empty( $user_id ) )
 			return false;
-
 		// If user has unread topics, load them
 		$read_ids = $this->get_read_ids( $user_id );
 		if ( !empty( $read_ids ) ) {
@@ -298,7 +299,7 @@ class BBP_Mark_As_Read {
 			return apply_filters( 'bbp_get_user_unread', $query, $user_id );
 		}
 
-		return false;
+		return bbp_has_topics(); // default query
 
 	}
 
