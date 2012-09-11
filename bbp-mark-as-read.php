@@ -138,15 +138,23 @@ class BBP_Mark_As_Read {
 
 		$read_ids = (array) $this->get_read_ids( $user_id );
 
-		$topic = bbp_get_topic( $topic_id );
-		if ( empty( $topic ) )
-			return false;
+		if( is_array( $topic_id ) ) {
 
-		if ( !in_array( $topic_id, $read_ids ) ) {
-			$read_ids[] = $topic_id;
+			$read_ids = array_merge( $topic_id, $read_ids );
+			$read_ids = array_unique( $read_ids );
 			$read_ids   = array_filter( $read_ids );
 			$read_ids   = (string) implode( ',', $read_ids );
 			update_user_meta( $user_id, '_bbp_mar_read_ids', $read_ids );
+
+		} else {
+
+			if ( !in_array( $topic_id, $read_ids ) ) {
+				$read_ids[] = $topic_id;
+				$read_ids   = array_filter( $read_ids );
+				$read_ids   = (string) implode( ',', $read_ids );
+				update_user_meta( $user_id, '_bbp_mar_read_ids', $read_ids );
+			}
+
 		}
 
 		do_action( 'bbp_mar_marked_as_read', $user_id, $topic_id );
@@ -254,7 +262,7 @@ class BBP_Mark_As_Read {
 
 		if ( empty( $user_ID ) )
 			return false;
-
+		//print_r( $this->get_read_ids( $user_ID ) ); exit;
 		$args = array(
 			'post_type' => 'topic', // only the topic post type
 			'posts_per_page' => -1, // get all topcs
@@ -295,7 +303,7 @@ class BBP_Mark_As_Read {
 		$read_ids = $this->get_read_ids( $user_id );
 		if ( !empty( $read_ids ) ) {
 			$query = bbp_has_topics( array( 'post__not_in' => $read_ids ) );
-
+			//echo '<pre>'; print_r( bbpress()->topic_query ); echo '</pre>'; exit;
 			return apply_filters( 'bbp_get_user_unread', $query, $user_id );
 		}
 
@@ -306,6 +314,8 @@ class BBP_Mark_As_Read {
 	// adds a section showing unread topics to the user's profile
 	public function show_unread_topics() {
 
+		global $user_ID;
+
 		if ( bbp_is_user_home() || current_user_can( 'edit_users' ) ) : ?>
 
 			<?php bbp_set_query_name( 'bbp_user_profile_unread_topics' ); ?>
@@ -314,7 +324,11 @@ class BBP_Mark_As_Read {
 				<h2 class="entry-title"><?php _e( 'Unread Forum Topics', 'bbp-mar' ); ?></h2>
 				<div class="bbp-user-section">
 
-					<?php if ( $this->bbp_get_user_unread() ) : ?>
+					<?php if ( $this->bbp_get_user_unread( $user_ID ) ) : ?>
+
+						<?php
+						global $wp_query;
+						//echo '<pre>'; print_r( $wp_query ); echo '</pre>'; exit; ?>
 
 						<?php bbp_get_template_part( 'pagination', 'topics' ); ?>
 
@@ -346,7 +360,7 @@ class BBP_Mark_As_Read {
 
 		if( !is_object( $post ) )
 			return;
-		if( 'topic' != get_post_type( $post ) )
+		if( 'topic' != get_post_type( $post ) || ! is_singular('topic') )
 			return;
 		if( $this->is_read( $user_ID, $post->ID ) )
 			return;
