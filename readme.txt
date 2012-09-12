@@ -25,7 +25,7 @@ If you have suggestions or bugfixes for the plugin, please report them on [Githu
 
 **Languages**
 
-Easy Digital Downloads as been translated into the following languages:
+Mark as Read for bbPress as been translated into the following languages:
 
 1. English
 
