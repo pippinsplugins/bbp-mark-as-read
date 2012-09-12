@@ -6,7 +6,7 @@ Donate link: http://pippinsplugins.com/support-the-site
 Tags: bbPress, Mark as Read, Mark as Unread, Forums, mordauk, Pippin Williamson, pippinsplugins
 Requires at least: 3.2
 Tested up to: 3.4.2
-Stable Tag: 1.0
+Stable Tag: 0.2
 
 
 A simple plugin to add Mark as read / Unread links to your bbPress forum topics.
@@ -19,6 +19,9 @@ Mark as Read / Unread links will be added to the top of each topic, right next t
 
 You can view a list of all unread topics by going to your bbPress profile page. The unread topics will be shown below your Subscribed Forum Topics.
 
+**Note**: this plugin is very much in beta. If you have problems with it, please post in the support forum and let me know instead of just leaving a bad rating. It's very possible that large aspects of this plugin will change as it matures.
+
+If you have suggestions or bugfixes for the plugin, please report them on [Github](https://github.com/pippinsplugins/bbp-mark-as-read).
 
 **Languages**
 
@@ -48,12 +51,20 @@ This plugin depends on several hooks provided by bbPress theme compatibility. If
 
 == Changelog ==
 
-= 1.0 = 
+= 0.2 = 
 
-* First official release!
+* Much improved beta release
+
+= 0.1 =
+
+* First beta release!
 
 == Upgrade Notice ==
 
-= 1.0 =
+= 0.2 =
 
-* First offical release!
+* Much improved beta release
+
+= 0.1 =
+
+* First beta release!
