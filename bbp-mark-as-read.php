@@ -3,7 +3,7 @@
 Plugin Name: bbPress - Mark as Read
 Plugin URL: http://pippinsplugins.com/bbpress-mark-as-read
 Description: Allows you to mark bbPress topics as read/unread and see all unread topics
-Version: 0.2
+Version: 0.3
 Author: Pippin Williamson
 Author URI: http://pippinsplugins.com
 Contributors: mordauk

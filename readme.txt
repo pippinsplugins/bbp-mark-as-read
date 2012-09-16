@@ -6,7 +6,7 @@ Donate link: http://pippinsplugins.com/support-the-site
 Tags: bbPress, Mark as Read, Mark as Unread, Forums, mordauk, Pippin Williamson, pippinsplugins
 Requires at least: 3.2
 Tested up to: 3.4.2
-Stable Tag: 0.2
+Stable Tag: 0.3
 
 
 A simple plugin to add Mark as read / Unread links to your bbPress forum topics.
@@ -28,6 +28,8 @@ If you have suggestions or bugfixes for the plugin, please report them on [Githu
 Mark as Read for bbPress as been translated into the following languages:
 
 1. English
+2. German
+3. Latvian
 
 Would you like to help translate the plugin into more langauges? [Contact Pippin](http://pippinsplugins.com/contact).
 
