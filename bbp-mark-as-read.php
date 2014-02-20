@@ -57,8 +57,13 @@ class BBP_Mark_As_Read {
 			return $html;
 		}
 
+		// Prevent the links from being adding when clicking Subscribe / Unsubscribe
+		if( defined( 'DOING_AJAX' ) && DOING_AJAX ) {
+			return $html;
+		}
+
 		// No link if you can't edit yourself
-		if ( !current_user_can( 'edit_user', (int) $user_id ) ) {
+		if ( ! current_user_can( 'edit_user', (int) $user_id ) ) {
 			return $html;
 		}
 
