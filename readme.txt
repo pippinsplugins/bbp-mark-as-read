@@ -6,7 +6,7 @@ Donate link: http://pippinsplugins.com/support-the-site
 Tags: bbPress, Mark as Read, Mark as Unread, Forums, mordauk, Pippin Williamson, pippinsplugins
 Requires at least: 3.2
 Tested up to: 3.9
-Stable Tag: 1.0
+Stable tag: 1.0
 
 
 A simple plugin to add Mark as read / Unread links to your bbPress forum topics.

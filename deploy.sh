@@ -65,7 +65,7 @@ svn commit --username=$SVNUSER -m "$COMMITMSG"
 
 # echo "Creating new SVN tag & committing it"
 cd $SVNPATH
-svn copy trunk/ tags/$NEWVERSION1/
+svn copy trunk tags/$NEWVERSION1/
 cd $SVNPATH/tags/$NEWVERSION1
 svn commit --username=$SVNUSER -m "Tag $NEWVERSION1"
 
