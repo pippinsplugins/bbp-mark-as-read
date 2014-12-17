@@ -5,7 +5,7 @@ Contributors: mordauk
 Donate link: http://pippinsplugins.com/support-the-site
 Tags: bbPress, Mark as Read, Mark as Unread, Forums, mordauk, Pippin Williamson, pippinsplugins
 Requires at least: 3.2
-Tested up to: 3.9
+Tested up to: 4.1
 Stable tag: 1.0
 
 
